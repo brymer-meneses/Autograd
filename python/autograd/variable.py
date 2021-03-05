@@ -62,6 +62,9 @@ class Variable:
 
         return Variable(result, requires_grad, depends_on=dependency, is_leaf=False)
 
+    def __repr__(self):
+        return f'Differentiable Variable with value: {self.value}'
+
     def backwards(self):
 
         def compute_gradients(variable, previous_grad):
