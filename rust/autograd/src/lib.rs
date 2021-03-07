@@ -1,5 +1,5 @@
-
 use std::ops;
+
 
 pub struct Variable {
     pub value: f64,
@@ -8,11 +8,12 @@ pub struct Variable {
     pub grad: f64,
 }
 
-#[#[derive(Default)]]
+// #[derive(Default)]
 impl Default for Variable {
     fn default() -> Self {
         Variable {
-            grad: 0,
+            value: 0 as f64,
+            grad: 0 as f64,
             requires_grad: false,
             depends_on: Vec::new(),
         }
