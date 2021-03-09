@@ -1,5 +1,5 @@
 use std::ops;
-
+use std::any::Any;
 
 pub struct Variable {
     pub value: f64,
@@ -40,6 +40,19 @@ impl Variable {
         }
 
         compute_gradients(self, 1 as f64);
+    }
+
+    pub fn new(value: f64, requires_grad: bool) -> Variable {
+
+        let new_variable = Variable {
+            value: value, 
+            grad: 0.,
+            requires_grad: requires_grad, 
+            depends_on: Vec::new(),
+        };
+
+        return new_variable
+
     }
 }
 

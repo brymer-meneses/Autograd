@@ -6,7 +6,7 @@ class Variable:
     grads = 0
     leaf_variables = []
 
-    def __init__(self, value, requires_grad, depends_on=[], is_leaf=True):
+    def __init__(self, value, requires_grad=False, depends_on=[], is_leaf=True):
         self.value = value
         self.depends_on = depends_on
         self.requires_grad = requires_grad
@@ -71,10 +71,13 @@ class Variable:
 
             for next_variable, grad in variable.depends_on:
                 # dV_(n)/dV_(n-1)
-                this_variable_grads = previous_grad * grad
-                next_variable.grads += this_variable_grads
 
-                compute_gradients(next_variable, this_variable_grads)
+                if next_variable.requires_grad:
+                    this_variable_grads = previous_grad * grad
+                    next_variable.grads += this_variable_grads
+                    compute_gradients(next_variable, this_variable_grads)
+                else:
+                    continue
 
         compute_gradients(self, previous_grad=1)
 

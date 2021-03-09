@@ -1,0 +1,4 @@
+name = "autograd"
+uuid = "6b45931f-f8c1-4a32-8567-5a7eaa8b8c3f"
+authors = ["Brymer-Meneses <meneses.brymer@gmail.com>"]
+version = "0.1.0"

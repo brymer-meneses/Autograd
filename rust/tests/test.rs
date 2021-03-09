@@ -17,7 +17,7 @@ fn it_works() {
     };
 
 
-    let c = a.copy() + b;
+    let c = a.clone() + b;
     c.backwards();
 
     // println!("{}", a.grad);
