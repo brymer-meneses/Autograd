@@ -1,24 +1,35 @@
-module autograd
+module autograd 
+include("./ops.jl")
 
-function greet()
-    println("Hello")
-end
+function ensure_float(n::Any) 
+    if typeof(n) != Float64
+        # Parse value to be Float64
+        try
+            n = convert(Float64, n)
+        catch error 
+            @warn("You passed a non-numerical for the parameter value in
+                instantiating Variable")
+        end
+    end 
+    return n
+end 
 
-struct Variable
-
+mutable struct Variable 
+    
     value::Float64
     requires_grad::Bool
-    depends_on
+    parent_nodes::Any
     grad::Float64
 
-
-    function Variable(value::Float64, requires_grad=false, depends_on=[]) 
-        return new(value, requires_grad, depends_on)
+    function Variable(value, requires_grad=False, parent_nodes=Any[], grad=0)
+        value = ensure_float(value)
+        
+        return new(value, requires_grad, parent_nodes, grad)
     end
 
-    function Base.:+(v1::Variable, v2::Variable)
+    function Base.:+(v1::Variable, v2::Variable) 
         return add(v1, v2)
-    end
+    end 
 
     function Base.:*(v1::Variable, v2::Variable)
         return mul(v1, v2)
@@ -26,75 +37,81 @@ struct Variable
 
 end
 
+struct Node 
+    # Node stores the dependencies of a 
+    # variable. This is essential during 
+    # the backpropagation.
+
+    variable::Variable
+    grad::Float64 
+
+    function Node(variable::Variable, grad::Any)
+
+        grad = ensure_float(grad)
+        return new(variable, grad)
+    end 
+end 
 
 function add(v1::Variable, v2::Variable)
-
-    result = v1.value + v2.value 
     requires_grad = v1.requires_grad || v2.requires_grad
+    result = v1.value + v2.value 
 
-    Dependency = []
-
+    parent_nodes = Any[]
     if v1.requires_grad
-        grad = 1.
-        append!(Dependency, [v1, grad])
+        push!(parent_nodes, Node(v1, 1))
     end
-
 
     if v2.requires_grad
-        grad = 1.
-        append!(Dependency, [v2, grad])
+        push!(parent_nodes, Node(v2, 1))
+    end 
+
+    return Variable(result, requires_grad, parent_nodes)
+end 
+        
+function mul(v1::Variable, v2::Variable)
+    requires_grad = v1.requires_grad || v2.requires_grad
+    result = v1.value * v2.value 
+
+    parent_nodes = Any[]
+    if v1.requires_grad
+        push!(parent_nodes, Node(v1, v2.value))
     end
-  
-    new_var = Variable(result, requires_grad, Dependency) 
-    return new_var
-    
+
+    if v2.requires_grad
+        push!(parent_nodes, Node(v2, v1.value))
+    end 
+
+    return Variable(result, requires_grad, parent_nodes)
 end 
 
-function mul(v1::Variable, v2::Variable)
-    result = v1.value * v2.value 
-    requires_grad  = v1.requires_grad || v2.requires_grad
+function backward(v::Variable)
 
-    Dependency = []
+    function compute_grads(v::Variable, child_grad::Float64)
     
-    v1.requires_grad
-        let grad = v2.value 
-        append!(Dependency, [v1, grad])
-    end 
-    
-    v2.requires_grad
-        let grad = v1.value 
-        append!(Dependency, [v2, grad])
-    end 
-    
-    new_var = Variable(result, requires_grad, Dependency)
-    return new_var
+        for node in v.parent_nodes
+
+            parent_var = node.variable 
+            if parent_var.requires_grad
+                parent_grad = node.grad * child_grad
+                parent_var.grad += parent_grad
+            else 
+                continue
+            end 
+
+        
+        compute_grads(parent_var, parent_grad)
+        end
+
+    end
+    compute_grads(v, 1.)
+
+end 
+
+function zero_grad(v::Variable)
+    v.grad = 0.
 end
 
-function backwards(v::Variable) 
-    
-    function compute_gradients(v::Variable, prev_grad::Float64)
-        for dependency in v.depends_on
-            next_variable, grad = dependency
+export backward, zero_grad
+export Variable
 
-            # dv
-            #       -> The next backward variable
-            #           V_{n-1}
-
-            # next_variable_grads
-            #       -> Derivative of this variable with respect 
-            #       the next backward variable
-            #       (\frac{dV_n}{dV_{n-1}})
-                       
-            dv = prev_grad * grad 
-            next_variable.grad += dv
-        end
-        compute_gradients(next_variable, dv)
-    end 
-
-    compute_gradients(v, 1.)
-end 
-
-
-
-
-end # module
+end # Module 
