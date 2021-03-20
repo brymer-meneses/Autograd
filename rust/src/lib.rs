@@ -73,6 +73,7 @@ trait AutoGrad {
 }
 
 impl<'a> Variable<'a> {
+    // ! Not working
     fn backwards(mut self) {
         fn cal_gradients<'a>(v: &mut Variable<'a>, parent_grad: f64) {
             for (variable, grad) in &mut v.parent_nodes {
